@@ -26,24 +26,26 @@ El flujo de trabajo de Integración Continua (CI) se configuró mediante **GitHu
 
 ### A. Historial de ejecuciones en Actions
 Esta captura muestra el historial de los flujos de trabajo disparados por los commits realizados al repositorio.
-![Historial de Actions](./img/historial_actions.png)
+![Historial de Actions](./evidencias/4.png)
 
 ### B. Detalle de un Workflow Exitoso y Cobertura
 Evidencia de que todos los pasos del pipeline terminaron correctamente y el reporte de cobertura de Jest muestra un 100% (o el porcentaje alcanzado) en la lógica de `app.js`.
-![Workflow Exitoso](./img/workflow_exitoso.png)
+![Workflow Exitoso](./evidencias/2.png)
+![Coverage](./evidencias/5.png)
 
 ### C. Detalle de un Workflow Fallido
 Para demostrar la efectividad del CI, se forzó un error intencionalmente (ej. cambiando un resultado esperado en los tests). El pipeline detectó el error y bloqueó la integración.
-![Workflow Fallido](./img/workflow_fallido.png)
+![Workflow Fallido](./evidencias/3.png)
 
 ### D. Configuración de la Regla de Protección de Rama
 Se configuró un *Ruleset* en la rama `main` para requerir que el check `build-and-test` pase obligatoriamente y que los cambios se realicen mediante Pull Request.
-![Protección de Rama](./img/configuracion_regla.png)
+![Protección de Rama](./evidencias/7.png)
+![Protección de Rama](./evidencias/8.png)
 
 ### E. Bloqueo de Push Directo a Main
 Como evidencia de la efectividad del Ruleset, se intentó realizar un `git push origin main` desde la terminal local. El servidor de GitHub rechazó la operación indicando que se han violado las reglas del repositorio, específicamente el requerimiento de un Pull Request y de los checks de estado.
 
-![Error de Push Directo](./img/error_push_directo.png)
+![Error de Push Directo](./evidencias/6.png)
 ---
 
 ## 4. Conclusiones y Reflexión
