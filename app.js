@@ -2,8 +2,6 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-const unusedVariable = 42; // Variable no utilizada para probar ESLint
-
 // Base de datos volátil en memoria
 let tasks = [
     { id: 1, title: "Estudiar para Nube", completed: false }
