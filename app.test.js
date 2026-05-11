@@ -6,7 +6,7 @@ describe('Pruebas para la API CRUD de Tareas', () => {
   // Prueba para obtener todas las tareas
   test('GET /tasks debe retornar una lista de tareas', async () => {
     const res = await request(app).get('/tasks');
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(404);
     expect(Array.isArray(res.body)).toBe(true);
     // Verificamos que al menos venga la tarea inicial que pusimos en app.js
     expect(res.body.length).toBeGreaterThan(0);
