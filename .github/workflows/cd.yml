@@ -1,20 +1,15 @@
-name: CD - Build, Push and Deploy
+name: CD - Production Deployment
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
       - name: Checkout del codigo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Login a Docker Hub
         uses: docker/login-action@v3
@@ -31,56 +26,47 @@ jobs:
             ${{ vars.IMAGE_NAME }}:${{ github.sha }}
             ${{ vars.IMAGE_NAME }}:latest
 
-  deploy:
+      - name: Escaneo de seguridad (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  deploy-staging:
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: staging
     steps:
-      - name: Desplegar en servidor remoto
+      - name: Desplegar en Servidor de Pruebas (EC2 Staging)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Usamos la variable IMAGE_NAME definida en el repositorio
             IMAGE="${{ vars.IMAGE_NAME }}:latest"
-            
-            echo "Iniciando despliegue de la imagen: $IMAGE"
-            
-            # 1. Desplegar la nueva imagen en un puerto alterno (3001) para validación
             docker pull $IMAGE
-            docker run -d \
-              --name mi-app-new \
-              --restart unless-stopped \
-              -p 3001:3000 \
-              $IMAGE
-            
-            # 2. Esperar a que el contenedor inicialice
-            sleep 5
-            
-            # 3. Health check: validar que el nuevo contenedor responde correctamente
-            if curl -sf http://localhost:3001/health; then
-              echo "Health check exitoso. Activando nuevo contenedor..."
-              
-              # 4. Detener y eliminar el contenedor viejo (si existe)
-              docker stop mi-app || true
-              docker rm mi-app || true
-              
-              # 5. Exponer el nuevo contenedor en el puerto público 80
-              docker run -d \
-                --name mi-app \
-                --restart unless-stopped \
-                -p 80:3000 \
-                $IMAGE
-              
-              # 6. Limpiar el contenedor de validación
-              docker rm -f mi-app-new || true
-              echo "Despliegue finalizado con éxito en el puerto 80."
-            else
-              echo "Health check FALLIDO en el puerto 3001. Cancelando despliegue."
-              docker rm -f mi-app-new || true
-              exit 1
-            fi
-            
-            # 7. Limpieza de imágenes y contenedores huérfanos para ahorrar espacio en EC2
+            docker stop app-staging || true
+            docker rm app-staging || true
+            docker run -d --name app-staging -p 80:3000 $IMAGE
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Desplegar en Servidor Principal (EC2 Production)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            IMAGE="${{ vars.IMAGE_NAME }}:latest"
+            docker pull $IMAGE
+            docker stop app-prod || true
+            docker rm app-prod || true
+            docker run -d --name app-prod --restart unless-stopped -p 80:3000 $IMAGE
             docker system prune -f
