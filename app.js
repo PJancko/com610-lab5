@@ -28,7 +28,7 @@ app.delete('/tasks/:id', (req, res) => {
 
 // Requisito del Lab 5.2: Endpoint de salud
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+    res.status(200).json({ status: 'ok', version: '2.0.0' });
 });
 
 module.exports = app;
